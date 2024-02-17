@@ -1,13 +1,18 @@
 {
+  // manually run in terminal: streamlit run app.py
+  // ∴ set program = streamlit from venv && args = "run app.py"
   "version": "1.0.0",
   "configurations": [
     {
       "name": "visual-pinger",
       "type": "debugpy",
       "request": "launch",
-      "program": "${workspaceFolder}/app.py",
-      "args": [],
-      "console": "integratedTerminal"
+      "program": "${workspaceFolder}/venv/bin/streamlit",
+      "console": "integratedTerminal",
+      "args": [
+        "run",
+        "app.py"
+      ]
     }
   ]
 }
