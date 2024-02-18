@@ -1,9 +1,11 @@
+import json
 import socket
+import requests
 from scapy.all import *
 from scapy.layers.inet import IP, UDP
-from state import TracerouteState
+from app_types import TracerouteState, GeoLocation
 
-def traceroute(destination: str, state: TracerouteState, ip_list: list[str], max_hops=30, timeout=2) -> list[str]:
+def traceroute(destination: str, state: TracerouteState, ip_hop_list: list[str], max_hops=30, timeout=2) -> list[str]:
     """
     Simple clone of traceroute, modifies the given IP list as the route is traced
     """
@@ -31,16 +33,16 @@ def traceroute(destination: str, state: TracerouteState, ip_list: list[str], max
         reply = sr1(packet, timeout=timeout, verbose=0)
  
         if reply is None:
-            ip_list.append("Unknown")
+            ip_hop_list.append("*")
             print(f"✔ Hop #{ttl}:\tUnknown")
         elif reply.type == ICMP_dst_reached_type or reply.src == dst_ip:
-            ip_list.append(str(reply.src))
+            ip_hop_list.append(str(reply.src))
             print(f"✔ Hop #{ttl}:\t{reply.src}")
             print("✔ Destination reached, stopping trace")
             break
         else:
             # Intermediate hop
-            ip_list.append(str(reply.src))
+            ip_hop_list.append(str(reply.src))
             print(f"✔ Hop #{ttl}:\t{reply.src}")
  
         ttl += 1
@@ -69,5 +71,32 @@ def is_valid_ipv4(ip: str | None):
     except:
         return False
 
-def convert_ip_to_geoloc():
-    print("todo")
+def get_geoloc(ip: str) -> GeoLocation:
+    """
+    - Extracts the geo location (lon + lat) from an IP.
+    - Uses public API: https://reallyfreegeoip.org/
+    """
+    if not is_valid_ipv4(ip):
+        print(f"✘ IP '{ip}' is not in a valid IPv4 format")
+        return None
+
+    res = requests.get(f"https://reallyfreegeoip.org/json/{ip}")
+
+    data = {}
+    try:
+        data = res.json()
+    except json.JSONDecodeError as e:
+        print(f"✘ Unable to decode JSON: {e}")
+        return None
+
+    lon = data.get("longitude")
+    lat = data.get("latitude")
+    name: list[str | None] = [data.get("country_name"), data.get("region_name"), data.get("city")]
+    name = ', '.join([i for i in name if i is not None and not i.isspace()])
+
+    if lon is None or lat is None:
+        print(f"✘ No geo location information available for IP '{ip}'")
+        return None
+    
+    print(f"✔ IP '{ip}' is located at longitude '{lon}', latitude '{lat}'")
+    return GeoLocation(lon, lat, name)
