@@ -1,6 +1,6 @@
+// manually run in terminal: streamlit run app.py
+// ∴ set program = streamlit from venv && args = "run app.py"
 {
-  // manually run in terminal: streamlit run app.py
-  // ∴ set program = streamlit from venv && args = "run app.py"
   "version": "1.0.0",
   "configurations": [
     {
